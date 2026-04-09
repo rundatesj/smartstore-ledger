@@ -1,12 +1,11 @@
-import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 export async function GET() {
   try {
     const clientId = process.env.NAVER_CLIENT_ID;
     const clientSecret = process.env.NAVER_CLIENT_SECRET;
-    const accountId = process.env.NAVER_ACCOUNT_ID;
 
-    if (!clientId || !clientSecret || !accountId) {
+    if (!clientId || !clientSecret) {
       return Response.json(
         {
           ok: false,
@@ -14,7 +13,6 @@ export async function GET() {
           env: {
             NAVER_CLIENT_ID: !!clientId,
             NAVER_CLIENT_SECRET: !!clientSecret,
-            NAVER_ACCOUNT_ID: !!accountId,
           },
         },
         { status: 500 }
@@ -22,19 +20,19 @@ export async function GET() {
     }
 
     const timestamp = Date.now().toString();
+    const password = `${clientId}_${timestamp}`;
 
-    const clientSecretSign = crypto
-      .createHmac("sha256", clientSecret)
-      .update(`${clientId}_${timestamp}`)
-      .digest("base64");
+    // 네이버 커머스API 공식 방식: bcrypt 해싱 후 base64 인코딩
+    const hashed = bcrypt.hashSync(password, clientSecret);
+    const clientSecretSign = Buffer.from(hashed, "utf-8").toString("base64");
 
-const body = new URLSearchParams({
-  client_id: clientId,
-  timestamp: timestamp,
-  grant_type: "client_credentials",
-  client_secret_sign: clientSecretSign,
-  type: "SELF"
-});
+    const body = new URLSearchParams({
+      client_id: clientId,
+      timestamp,
+      grant_type: "client_credentials",
+      client_secret_sign: clientSecretSign,
+      type: "SELF",
+    });
 
     const res = await fetch("https://api.commerce.naver.com/external/v1/oauth2/token", {
       method: "POST",
