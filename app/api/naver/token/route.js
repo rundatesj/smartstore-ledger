@@ -28,14 +28,13 @@ export async function GET() {
       .update(`${clientId}_${timestamp}`)
       .digest("base64");
 
-    const body = new URLSearchParams({
-      client_id: clientId,
-      timestamp,
-      grant_type: "client_credentials",
-      client_secret_sign: clientSecretSign,
-      type: "SELLER",
-      account_id: accountId,
-    });
+const body = new URLSearchParams({
+  client_id: clientId,
+  timestamp: timestamp,
+  grant_type: "client_credentials",
+  client_secret_sign: clientSecretSign,
+  type: "SELF"
+});
 
     const res = await fetch("https://api.commerce.naver.com/external/v1/oauth2/token", {
       method: "POST",
